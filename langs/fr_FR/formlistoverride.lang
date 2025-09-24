@@ -1,0 +1,40 @@
+# Copyright (C) 2025 SuperAdmin
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#
+# Generic
+#
+
+# Module label 'ModuleFormListOverrideName'
+ModuleFormListOverrideName = FormListOverride
+# Module description 'ModuleFormListOverrideDesc'
+ModuleFormListOverrideDesc = FormListOverride description
+
+#
+# Admin page
+#
+FormListOverrideSetup = Configuration du module
+Settings = Settings
+FormListOverrideSetupPage = Paramètres
+FORMLISTOVERRIDE_FORCE_FORM_METHOD_GET_WHEN_SEARCH_ON_THIS_PAGES = Liste des pages concernées pour forcer les recherches en GET et éviter le message de confirmation du nagateur concernant le renvoie des données du formulaire de recherche
+FORMLISTOVERRIDE_FORCE_FORM_METHOD_GET_WHEN_SEARCH_ON_THIS_PAGES_Tooltip = Une page par ligne (ex : ticket/list.php)
+
+
+#
+# About page
+#
+About = A propos
+FormListOverrideAbout = A propos de FormListOverride
+FormListOverrideAboutPage = A propos
