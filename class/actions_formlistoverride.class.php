@@ -96,7 +96,10 @@ class ActionsFormListOverride
 		if ($this->checkContext('main', $hookmanager->contextarray)) {
 			$pagesToOverride = formlistoverrideGetListOfPagesToOverrideForm();
 			if (count($pagesToOverride)) {
-				print "<script>const formListOverridePages = JSON.parse('".json_encode($pagesToOverride)."');</script>";
+				print "<script>";
+				print "const formListOverridePages = JSON.parse('" . json_encode($pagesToOverride) . "');";
+				print "const formListOverrideBaseUrl = '" . dol_buildpath('/', 1) ."'";
+				print "</script>";
 				print '<script defer src="'. dol_buildpath('/custom/formlistoverride/js/formListOverride.js', 1) . '"></script>';
 				$retValue = 1;
 			}

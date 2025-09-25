@@ -1,9 +1,9 @@
 const formListOverride = {
     init: function()
     {
-        if (typeof formListOverridePages != 'undefined' && Array.isArray(formListOverridePages) && formListOverridePages.length > 0) {
+        if (typeof formListOverrideBaseUrl != 'undefined' && typeof formListOverridePages != 'undefined' && Array.isArray(formListOverridePages) && formListOverridePages.length > 0) {
             for (const page of formListOverridePages) {
-                const formEl = document.querySelector('form[action="/'+page+'"]');
+                const formEl = document.querySelector(`form[action="${formListOverrideBaseUrl}${page}"]`);
                 if (formEl) {
                     formEl.addEventListener('submit', formListOverride.handleFormSubmit);
                 }
@@ -15,8 +15,6 @@ const formListOverride = {
     {
         const formEl = evt.currentTarget;
         let formData = new FormData(formEl);
-
-        console.log(formData);
 
         // Detect submit is a simple search (not an massaction)
         if (formData.get('massaction') == 0) {
