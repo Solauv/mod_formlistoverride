@@ -80,3 +80,50 @@ function formlistoverrideGetListOfPagesToOverrideForm(): array
 
 	return $listOfPagesToOverride;
 }
+
+function formlistoverrideConvertPostSearchListRequestToGetIfPossible($context, $action)
+{
+	$pagesToOverride = formlistoverrideGetListOfPagesToOverrideForm();
+
+	if (preg_match('/list$/', $context) && $action == 'list' && GETPOST('formfilteraction') == 'list' && $_SERVER['REQUEST_METHOD'] == 'POST') {
+		// Detect if it is a simple search (not an massaction)
+		if (GETPOSTINT('massaction') == 0) {
+			foreach ($pagesToOverride as $page) {
+				if ( strstr($_SERVER['SCRIPT_NAME'], $page) !== false) {
+					formlistoverrideRedirectPostSearchListToGet();
+				}
+			}
+		}
+	}
+}
+
+function formlistoverrideRedirectPostSearchListToGet()
+{
+	$postData = $_POST;
+
+	// Remove useless data
+	unset($postData['massaction']);
+	unset($postData['confirmmassactioninvisible']);
+	unset($postData['token']);
+
+	// Remove parameters with default value
+	$postData = array_filter($postData, function ($value) {
+		if ($value == '' || $value == '-1') {
+			return false;
+		}
+		return true;
+	});
+
+	$newLocationUrl = $_SERVER['SCRIPT_NAME'];
+	$queryString = http_build_query($postData);
+	if ($queryString !== '') {
+		$newLocationUrl .= '?' . $queryString;
+	}
+
+	$maxUrlLength = 2000;
+	if (strlen($newLocationUrl) <= $maxUrlLength) {
+		header('Location: ' . $newLocationUrl);
+		exit();
+	}
+}
+

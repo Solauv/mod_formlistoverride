@@ -23,7 +23,7 @@
  * Put detailed description here.
  */
 
-include_once DOL_DOCUMENT_ROOT.'/custom/formlistoverride/lib/formlistoverride.lib.php';
+include_once DOL_DOCUMENT_ROOT . '/custom/formlistoverride/lib/formlistoverride.lib.php';
 
 /**
  * Class ActionsFormListOverride
@@ -81,6 +81,32 @@ class ActionsFormListOverride
 		}
 	}
 
+	// /**
+	//  * Overloading the addHtmlHeader function : replacing the parent's function with the one below
+	//  *
+	//  * @param   array           $parameters     Hook metadatas (context, etc...)
+	//  * @param   CommonObject    $object         The object to process (an invoice if you are in invoice module, a propale in propale's module, etc...)
+	//  * @param   string          $action         Current action (if set). Generally create or edit or null
+	//  * @param   HookManager     $hookmanager    Hook manager propagated to allow calling another hook
+	//  * @return  int                             < 0 on error, 0 on success, 1 to replace standard code
+	//  */
+	// public function addHtmlHeader($parameters, &$object, &$action, $hookmanager)
+	// {
+	// 	$retValue = 0;
+	// 	if ($this->checkContext('main', $hookmanager->contextarray)) {
+	// 		$pagesToOverride = formlistoverrideGetListOfPagesToOverrideForm();
+	// 		if (count($pagesToOverride)) {
+	// 			print "<script>";
+	// 			print "const formListOverridePages = JSON.parse('" . json_encode($pagesToOverride) . "');";
+	// 			print "const formListOverrideBaseUrl = '" . dol_buildpath('/', 1) . "'";
+	// 			print "</script>";
+	// 			print '<script defer src="' . dol_buildpath('/custom/formlistoverride/js/formListOverride.js', 1) . '"></script>';
+	// 			$retValue = 1;
+	// 		}
+	// 	}
+	// 	return $retValue;
+	// }
+
 	/**
 	 * Overloading the doActions function : replacing the parent's function with the one below
 	 *
@@ -90,20 +116,9 @@ class ActionsFormListOverride
 	 * @param   HookManager     $hookmanager    Hook manager propagated to allow calling another hook
 	 * @return  int                             < 0 on error, 0 on success, 1 to replace standard code
 	 */
-	public function addHtmlHeader($parameters, &$object, &$action, $hookmanager)
+	public function doActions($parameters, &$object, &$action, $hookmanager)
 	{
-		$retValue = 0;
-		if ($this->checkContext('main', $hookmanager->contextarray)) {
-			$pagesToOverride = formlistoverrideGetListOfPagesToOverrideForm();
-			if (count($pagesToOverride)) {
-				print "<script>";
-				print "const formListOverridePages = JSON.parse('" . json_encode($pagesToOverride) . "');";
-				print "const formListOverrideBaseUrl = '" . dol_buildpath('/', 1) ."'";
-				print "</script>";
-				print '<script defer src="'. dol_buildpath('/custom/formlistoverride/js/formListOverride.js', 1) . '"></script>';
-				$retValue = 1;
-			}
-		}
-		return $retValue;
+		formlistoverrideConvertPostSearchListRequestToGetIfPossible($hookmanager->contextarray[0], $action);
 	}
 }
+
