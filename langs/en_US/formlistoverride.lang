@@ -30,6 +30,10 @@ Settings = Settings
 FormListOverrideSetupPage = FormListOverride setup page
 FORMLISTOVERRIDE_FORCE_FORM_METHOD_GET_WHEN_SEARCH_ON_THIS_PAGES = List of pages you want to force search in GET and avoid browser confirm form data submission
 FORMLISTOVERRIDE_FORCE_FORM_METHOD_GET_WHEN_SEARCH_ON_THIS_PAGES_Tooltip = On page per line (as : ticket/list.php)
+FORMLISTOVERRIDE_DRYRUN = Dry-run (log only)
+FORMLISTOVERRIDE_DRYRUN_Tooltip = When enabled, the target GET URL is written to the Dolibarr log (LOG_DEBUG) instead of performing the redirect. Use it to validate the behavior on your install before enabling it for real.
+FormListOverrideSuggestedPagesTitle = Suggested pages
+FormListOverrideSuggestedPagesHelp = Proposal only, not applied automatically. Copy the lines you want into the field above and save. The trailing "_list.php" also covers custom (modulebuilder) module lists. Only add pages that reserve action='list' for display.
 
 
 #
