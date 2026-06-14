@@ -18,12 +18,12 @@
 /**
  * \file    formlistoverride/class/actions_formlistoverride.class.php
  * \ingroup formlistoverride
- * \brief   Example hook overload.
- *
- * Put detailed description here.
+ * \brief   Hook overload for FormListOverride.
  */
 
-include_once DOL_DOCUMENT_ROOT . '/custom/formlistoverride/lib/formlistoverride.lib.php';
+// Load the module library. dol_include_once resolves the module path whatever the
+// alternative root is (/custom or other), so we do NOT hardcode '/custom/'.
+dol_include_once('/formlistoverride/lib/formlistoverride.lib.php');
 
 /**
  * Class ActionsFormListOverride
@@ -45,7 +45,6 @@ class ActionsFormListOverride
 	 */
 	public $errors = array();
 
-
 	/**
 	 * @var array Hook results. Propagated to $hookmanager->resArray for later reuse
 	 */
@@ -57,68 +56,36 @@ class ActionsFormListOverride
 	public $resprints;
 
 	/**
-	 * @var int		Priority of hook (50 is used if value is not defined)
+	 * @var int Priority of hook (50 is used if value is not defined)
 	 */
 	public $priority;
-
 
 	/**
 	 * Constructor
 	 *
-	 *  @param		DoliDB		$db      Database handler
+	 * @param DoliDB $db Database handler
 	 */
 	public function __construct($db)
 	{
 		$this->db = $db;
 	}
 
-	public function checkContext($contextsToTest, $pageContextArray): bool
-	{
-		if (is_array($contextsToTest)) {
-			return count(array_intersect($contextsToTest, $pageContextArray)) > 0;
-		} else {
-			return in_array($contextsToTest, $pageContextArray);
-		}
-	}
-
-	// /**
-	//  * Overloading the addHtmlHeader function : replacing the parent's function with the one below
-	//  *
-	//  * @param   array           $parameters     Hook metadatas (context, etc...)
-	//  * @param   CommonObject    $object         The object to process (an invoice if you are in invoice module, a propale in propale's module, etc...)
-	//  * @param   string          $action         Current action (if set). Generally create or edit or null
-	//  * @param   HookManager     $hookmanager    Hook manager propagated to allow calling another hook
-	//  * @return  int                             < 0 on error, 0 on success, 1 to replace standard code
-	//  */
-	// public function addHtmlHeader($parameters, &$object, &$action, $hookmanager)
-	// {
-	// 	$retValue = 0;
-	// 	if ($this->checkContext('main', $hookmanager->contextarray)) {
-	// 		$pagesToOverride = formlistoverrideGetListOfPagesToOverrideForm();
-	// 		if (count($pagesToOverride)) {
-	// 			print "<script>";
-	// 			print "const formListOverridePages = JSON.parse('" . json_encode($pagesToOverride) . "');";
-	// 			print "const formListOverrideBaseUrl = '" . dol_buildpath('/', 1) . "'";
-	// 			print "</script>";
-	// 			print '<script defer src="' . dol_buildpath('/custom/formlistoverride/js/formListOverride.js', 1) . '"></script>';
-	// 			$retValue = 1;
-	// 		}
-	// 	}
-	// 	return $retValue;
-	// }
-
 	/**
 	 * Overloading the doActions function : replacing the parent's function with the one below
 	 *
 	 * @param   array           $parameters     Hook metadatas (context, etc...)
-	 * @param   CommonObject    $object         The object to process (an invoice if you are in invoice module, a propale in propale's module, etc...)
-	 * @param   string          $action         Current action (if set). Generally create or edit or null
+	 * @param   CommonObject    $object         The object to process
+	 * @param   string          $action         Current action
 	 * @param   HookManager     $hookmanager    Hook manager propagated to allow calling another hook
 	 * @return  int                             < 0 on error, 0 on success, 1 to replace standard code
 	 */
 	public function doActions($parameters, &$object, &$action, $hookmanager)
 	{
-		formlistoverrideConvertPostSearchListRequestToGetIfPossible($hookmanager->contextarray[0], $action);
+		if (function_exists('formlistoverrideConvertPostSearchListRequestToGetIfPossible')
+			&& !empty($hookmanager->contextarray)) {
+			formlistoverrideConvertPostSearchListRequestToGetIfPossible($hookmanager->contextarray[0], $action);
+		}
+
+		return 0;
 	}
 }
-
