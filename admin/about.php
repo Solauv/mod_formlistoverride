@@ -53,7 +53,7 @@ if (!$res) {
 // Libraries
 require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
-require_once '../lib/formlistoverride.lib.php';
+dol_include_once('/formlistoverride/lib/formlistoverride.lib.php');
 
 // Translations
 $langs->loadLangs(array("errors", "admin", "formlistoverride@formlistoverride"));
@@ -95,9 +95,33 @@ print load_fiche_titre($langs->trans($page_name), $linkback, 'title_setup');
 $head = formlistoverrideAdminPrepareHead();
 print dol_get_fiche_head($head, 'about', $langs->trans($page_name), 0, 'formlistoverride@formlistoverride');
 
+// Long description of the module (renders README.md if present)
 dol_include_once('/formlistoverride/core/modules/modFormListOverride.class.php');
 $tmpmodule = new modFormListOverride($db);
 print $tmpmodule->getDescLong();
+
+// --- Editor block (Solauv) ---
+$editorname    = $tmpmodule->editor_name;
+$editorurl     = $tmpmodule->editor_url;
+$moduleversion = $tmpmodule->version;
+$modulelabel   = $tmpmodule->getName();
+
+print '<br>';
+print load_fiche_titre($langs->trans("Editor"), '', '');
+
+print '<div class="div-table-responsive-no-min">';
+print '<table class="noborder centpercent">';
+
+print '<tr class="oddeven"><td class="titlefield">'.$langs->trans("Module").'</td><td>'.dol_escape_htmltag($modulelabel).' &mdash; v'.dol_escape_htmltag($moduleversion).'</td></tr>';
+
+print '<tr class="oddeven"><td>'.$langs->trans("Author").'</td><td><strong>'.dol_escape_htmltag($editorname).'</strong> &mdash; Expert intégrateur Dolibarr</td></tr>';
+
+if (!empty($editorurl)) {
+	print '<tr class="oddeven"><td>'.$langs->trans("Web").'</td><td><a href="'.dol_escape_htmltag($editorurl).'" target="_blank" rel="noopener noreferrer">'.dol_escape_htmltag($editorurl).'</a></td></tr>';
+}
+
+print '</table>';
+print '</div>';
 
 // Page end
 print dol_get_fiche_end();
