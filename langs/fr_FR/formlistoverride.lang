@@ -30,6 +30,10 @@ Settings = Settings
 FormListOverrideSetupPage = Paramètres
 FORMLISTOVERRIDE_FORCE_FORM_METHOD_GET_WHEN_SEARCH_ON_THIS_PAGES = Liste des pages concernées pour forcer les recherches en GET et éviter le message de confirmation du navigateur concernant le renvoie des données du formulaire de recherche
 FORMLISTOVERRIDE_FORCE_FORM_METHOD_GET_WHEN_SEARCH_ON_THIS_PAGES_Tooltip = Une page par ligne (ex : ticket/list.php)
+FORMLISTOVERRIDE_DRYRUN = Mode test (journalisation seule)
+FORMLISTOVERRIDE_DRYRUN_Tooltip = Si activé, l'URL GET cible est écrite dans le journal Dolibarr (LOG_DEBUG) au lieu d'effectuer la redirection. Permet de valider le comportement sur votre installation avant l'activation réelle.
+FormListOverrideSuggestedPagesTitle = Pages suggérées
+FormListOverrideSuggestedPagesHelp = Proposition uniquement, non appliquée automatiquement. Copiez les lignes voulues dans le champ ci-dessus puis enregistrez. Le suffixe « _list.php » couvre aussi les listes des modules custom (modulebuilder). N'ajoutez que des pages réservant action='list' à l'affichage.
 
 
 #
