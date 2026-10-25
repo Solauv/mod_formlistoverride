@@ -124,6 +124,7 @@ if ($action == 'update') {
 	dolibarr_set_const($db, $pagesConstName, implode("\n", $validEntries), 'chaine', 0, '', $conf->entity);
 	dolibarr_set_const($db, 'FORMLISTOVERRIDE_DRYRUN', (int) GETPOST('FORMLISTOVERRIDE_DRYRUN', 'int'), 'chaine', 0, '', $conf->entity);
 	dolibarr_set_const($db, 'FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION', (int) GETPOST('FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION', 'int'), 'chaine', 0, '', $conf->entity);
+	dolibarr_set_const($db, 'FORMLISTOVERRIDE_MENU_PER_TAB', (int) GETPOST('FORMLISTOVERRIDE_MENU_PER_TAB', 'int'), 'chaine', 0, '', $conf->entity);
 
 	setEventMessages($langs->trans('SetupSaved'), null, 'mesgs');
 	header('Location: '.$_SERVER['PHP_SELF']);
@@ -243,6 +244,10 @@ print '</td></tr>';
 
 print '<tr class="liste_titre"><td>'.$form->textwithpicto($langs->trans('FORMLISTOVERRIDE_DRYRUN'), $langs->trans('FORMLISTOVERRIDE_DRYRUN_Tooltip')).'</td></tr>';
 print '<tr class="oddeven"><td>'.$form->selectyesno('FORMLISTOVERRIDE_DRYRUN', getDolGlobalInt('FORMLISTOVERRIDE_DRYRUN'), 1).'</td></tr>';
+
+// Independent of the GET conversion: same module, other proof of concept.
+print '<tr class="liste_titre"><td>'.$form->textwithpicto($langs->trans('FORMLISTOVERRIDE_MENU_PER_TAB'), $langs->trans('FORMLISTOVERRIDE_MENU_PER_TAB_Tooltip')).'</td></tr>';
+print '<tr class="oddeven"><td>'.$form->selectyesno('FORMLISTOVERRIDE_MENU_PER_TAB', getDolGlobalInt('FORMLISTOVERRIDE_MENU_PER_TAB'), 1).'</td></tr>';
 print '</table>';
 
 print '<div class="center"><input type="submit" class="button button-save" value="'.dol_escape_htmltag($langs->trans('Save')).'"></div>';

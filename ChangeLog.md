@@ -3,6 +3,7 @@
 CHANGELOG FORMLISTOVERRIDE FOR DOLIBARR ERP CRM
 
 ## Unreleased
+Add (POC): option "One menu per browser tab" (FORMLISTOVERRIDE_MENU_PER_TAB, off by default). The menu section travels in the URLs: local links and forms of each page carry the section it shows, and so does the redirect after a form. A tab keeps its menu until a menu is clicked in it, whatever the other tabs do. The session is only written by the core, as for a menu click.
 Add: option "Accept searches without action" (FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION, off by default). Some lists post no action with their search (users, contacts, agenda, scheduled jobs, cheque deposits): with the option, such a search is converted too, and the detection offers these lists. A request carrying another action is never converted.
 Fix: the list context was read from the first hook context only. An object built by the page can push its own context in front (new User() in user/list.php gives 'userdao'), so the page was not recognized as a list. Every context is now checked.
 Change: the stored detection carries a format version; a detection stored by an older version is run again automatically.

@@ -431,3 +431,130 @@ function formlistoverrideRedirectPostSearchListToGet()
 		exit();
 	}
 }
+
+/*
+ * One menu per browser tab
+ *
+ * Dolibarr keeps the menu section (mainmenu/leftmenu) in the session, shared by all tabs: a menu
+ * click in tab B changes the menu shown when tab A is reloaded. With FORMLISTOVERRIDE_MENU_PER_TAB
+ * the section travels in the URLs instead: every local link and form of a page carries the section
+ * the page shows, and so does the redirect that follows a form. The session is never written by
+ * the module: the core sets it from mainmenu, as for a menu click.
+ */
+
+/**
+ * Add the menu section to a local page URL.
+ *
+ * @param  string $url      URL as found in the page (may be HTML-escaped, '&amp;')
+ * @param  string $mainmenu Section
+ * @param  string $leftmenu Sub-section
+ * @param  string $host     Host of the current request, to accept absolute local URLs
+ * @return string|null      URL with the section, null when it must be left as is
+ */
+function formlistoverrideAddMenuSectionToUrl(string $url, string $mainmenu, string $leftmenu, string $host = ''): ?string
+{
+	// Not a plain URL (built by JavaScript, template...), or not a page of this site.
+	if ($url === '' || $url[0] === '#' || preg_match('/[\'"+\s{}$<>]/', $url) || preg_match('/^(javascript|mailto|tel|data):/i', $url)) {
+		return null;
+	}
+	if (preg_match('#^(https?:)?//([^/]+)#i', $url, $reg) && strcasecmp($reg[2], $host) !== 0) {
+		return null;
+	}
+	$fragmentPos = strpos($url, '#');
+	$base = ($fragmentPos === false ? $url : substr($url, 0, $fragmentPos));
+	$fragment = ($fragmentPos === false ? '' : substr($url, $fragmentPos));
+	if (!preg_match('#\.php(\?|$)#', $base) || preg_match('/[?&;]mainmenu=/', $base)) {
+		return null; // not a page, or already a menu link
+	}
+
+	// HTML-escaped separator: right in an attribute; the redirect turns it back into '&'.
+	$params = 'mainmenu='.rawurlencode($mainmenu).'&amp;leftmenu='.rawurlencode($leftmenu);
+	if (strpos($base, '?') === false) {
+		return $base.'?'.$params.$fragment;
+	}
+	$base = (string) preg_replace('/(&amp;|&)$/', '', $base);
+
+	return $base.(substr($base, -1) === '?' ? '' : '&amp;').$params.$fragment;
+}
+
+/**
+ * Add the menu section to the local links (<a href>) and forms of a page.
+ *
+ * @param  string $html     Page output
+ * @param  string $mainmenu Section
+ * @param  string $leftmenu Sub-section
+ * @param  string $host     Host of the current request
+ * @return string
+ */
+function formlistoverrideAddMenuSectionToPage(string $html, string $mainmenu, string $leftmenu, string $host = ''): string
+{
+	$html = (string) preg_replace_callback('/<a\b[^>]*>/i', static function ($tag) use ($mainmenu, $leftmenu, $host) {
+		return (string) preg_replace_callback('/(\shref=)(["\'])(.*?)\2/i', static function ($attr) use ($mainmenu, $leftmenu, $host) {
+			$url = formlistoverrideAddMenuSectionToUrl($attr[3], $mainmenu, $leftmenu, $host);
+			return ($url === null ? $attr[0] : $attr[1].$attr[2].$url.$attr[2]);
+		}, $tag[0], 1);
+	}, $html);
+
+	// Forms: hidden fields, which a GET form also sends (it drops the query of its action).
+	$hidden = '<input type="hidden" name="mainmenu" value="'.dol_escape_htmltag($mainmenu).'">';
+	$hidden .= '<input type="hidden" name="leftmenu" value="'.dol_escape_htmltag($leftmenu).'">';
+
+	return (string) preg_replace_callback('/<form\b[^>]*>/i', static function ($tag) use ($hidden, $host) {
+		if (preg_match('/\saction=(["\'])(.*?)\1/i', $tag[0], $reg) && preg_match('#^(https?:)?//([^/]+)#i', $reg[2], $hostReg) && strcasecmp($hostReg[2], $host) !== 0) {
+			return $tag[0]; // form posting to another site
+		}
+		return $tag[0].$hidden;
+	}, $html);
+}
+
+/**
+ * Start adding the section shown by the page to its links and forms (called before the menus
+ * are printed, once the core has read mainmenu/leftmenu).
+ *
+ * @return void
+ */
+function formlistoverrideMenuPerTabStartPage(): void
+{
+	static $started = false; // top_htmlhead() may run twice for one page
+	$mainmenu = (string) ($_SESSION['mainmenu'] ?? '');
+	if ($started || $mainmenu === '') {
+		return;
+	}
+	$started = true;
+	$leftmenu = (string) ($_SESSION['leftmenu'] ?? '');
+	$host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+
+	ob_start(static function ($buffer) use ($mainmenu, $leftmenu, $host) {
+		return formlistoverrideAddMenuSectionToPage((string) $buffer, $mainmenu, $leftmenu, $host);
+	});
+}
+
+/**
+ * Add the section of the request to the redirect it may end with (the page shown after saving a
+ * form), so that reloading that page later keeps the section of this tab.
+ *
+ * @return void
+ */
+function formlistoverrideMenuPerTabWatchRedirect(): void
+{
+	static $registered = false;
+	if ($registered || !GETPOSTISSET('mainmenu') || headers_sent()) {
+		return;
+	}
+	$registered = true;
+	$mainmenu = (string) GETPOST('mainmenu', 'aZ09');
+	$leftmenu = (string) GETPOST('leftmenu', 'aZ09');
+	$host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+
+	header_register_callback(static function () use ($mainmenu, $leftmenu, $host) {
+		foreach (headers_list() as $header) {
+			if (stripos($header, 'Location:') === 0) {
+				$url = formlistoverrideAddMenuSectionToUrl(trim(substr($header, 9)), $mainmenu, $leftmenu, $host);
+				if ($url !== null) {
+					header('Location: '.str_replace('&amp;', '&', $url), true);
+				}
+				return;
+			}
+		}
+	});
+}

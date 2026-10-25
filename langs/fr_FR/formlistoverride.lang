@@ -48,6 +48,8 @@ FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION_Tooltip = Certaines listes (utilisateurs, c
 FormListOverrideAcceptEmptyActionCount = %s listes détectées sont concernées.
 FormListOverrideNoActionPosted = sans action
 FormListOverrideReasonEmptyAction = son formulaire n'envoie pas d'action : activez « Accepter les recherches sans action »
+FORMLISTOVERRIDE_MENU_PER_TAB = Un menu par onglet du navigateur
+FORMLISTOVERRIDE_MENU_PER_TAB_Tooltip = Dolibarr garde la section du menu dans la session, commune à tous les onglets : un clic de menu dans un onglet change le menu des autres quand on les recharge. Si activé, chaque onglet garde sa section tant qu'on ne clique pas sur le menu dans cet onglet.
 FORMLISTOVERRIDE_DRYRUN = Mode test (journalisation seule)
 FORMLISTOVERRIDE_DRYRUN_Tooltip = Si activé, l'URL GET cible est écrite dans le journal Dolibarr (LOG_DEBUG) au lieu d'effectuer la redirection. Permet de valider le comportement sur votre installation avant l'activation réelle.
 

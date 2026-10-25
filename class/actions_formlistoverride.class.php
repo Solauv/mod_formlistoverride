@@ -85,6 +85,29 @@ class ActionsFormListOverride
 			&& !empty($hookmanager->contextarray)) {
 			formlistoverrideConvertPostSearchListRequestToGetIfPossible($hookmanager->contextarray, $action);
 		}
+		if (getDolGlobalInt('FORMLISTOVERRIDE_MENU_PER_TAB') && function_exists('formlistoverrideMenuPerTabWatchRedirect')) {
+			formlistoverrideMenuPerTabWatchRedirect();
+		}
+
+		return 0;
+	}
+
+	/**
+	 * Called in top_htmlhead(), on every page with a header (Dolibarr 16 to 24), once the core
+	 * has read mainmenu/leftmenu. Starts adding the menu section to the links and forms of the
+	 * page, when the menu is kept per browser tab.
+	 *
+	 * @param   array<string,mixed> $parameters     Hook metadatas (context, etc...)
+	 * @param   CommonObject|null   $object         Not used
+	 * @param   string              $action         Current action
+	 * @param   HookManager         $hookmanager    Hook manager
+	 * @return  int                                 0
+	 */
+	public function addHtmlHeader($parameters, &$object, &$action, $hookmanager)
+	{
+		if (getDolGlobalInt('FORMLISTOVERRIDE_MENU_PER_TAB') && function_exists('formlistoverrideMenuPerTabStartPage')) {
+			formlistoverrideMenuPerTabStartPage();
+		}
 
 		return 0;
 	}
