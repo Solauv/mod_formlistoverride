@@ -468,7 +468,11 @@ function formlistoverrideAddMenuSectionToUrl(string $url, string $mainmenu, stri
 	}
 
 	// HTML-escaped separator: right in an attribute; the redirect turns it back into '&'.
-	$params = 'mainmenu='.rawurlencode($mainmenu).'&amp;leftmenu='.rawurlencode($leftmenu);
+	// A leftmenu already in the link is the one the core chose for the target page: keep it.
+	$params = 'mainmenu='.rawurlencode($mainmenu);
+	if (!preg_match('/[?&;]leftmenu=/', $base)) {
+		$params .= '&amp;leftmenu='.rawurlencode($leftmenu);
+	}
 	if (strpos($base, '?') === false) {
 		return $base.'?'.$params.$fragment;
 	}
