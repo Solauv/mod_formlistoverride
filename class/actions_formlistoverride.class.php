@@ -41,12 +41,12 @@ class ActionsFormListOverride
 	public $error = '';
 
 	/**
-	 * @var array Errors
+	 * @var string[] Errors
 	 */
 	public $errors = array();
 
 	/**
-	 * @var array Hook results. Propagated to $hookmanager->resArray for later reuse
+	 * @var array<string,mixed> Hook results. Propagated to $hookmanager->resArray for later reuse
 	 */
 	public $results = array();
 
@@ -73,17 +73,17 @@ class ActionsFormListOverride
 	/**
 	 * Overloading the doActions function : replacing the parent's function with the one below
 	 *
-	 * @param   array           $parameters     Hook metadatas (context, etc...)
+	 * @param   array<string,mixed> $parameters Hook metadatas (context, etc...)
 	 * @param   CommonObject    $object         The object to process
 	 * @param   string          $action         Current action
 	 * @param   HookManager     $hookmanager    Hook manager propagated to allow calling another hook
-	 * @return  int                             < 0 on error, 0 on success, 1 to replace standard code
+	 * @return  int                             Negative on error, 0 on success, 1 to replace standard code
 	 */
 	public function doActions($parameters, &$object, &$action, $hookmanager)
 	{
 		if (function_exists('formlistoverrideConvertPostSearchListRequestToGetIfPossible')
 			&& !empty($hookmanager->contextarray)) {
-			formlistoverrideConvertPostSearchListRequestToGetIfPossible($hookmanager->contextarray[0], $action);
+			formlistoverrideConvertPostSearchListRequestToGetIfPossible($hookmanager->contextarray, $action);
 		}
 
 		return 0;

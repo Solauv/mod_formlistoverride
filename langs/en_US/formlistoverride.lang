@@ -43,6 +43,11 @@ FormListOverrideIncompatibleTitle = Detected but not compatible lists (%s)
 FormListOverrideIncompatibleHelp = The module cannot act on these lists.
 FormListOverrideReasonNoAction = its search form does not post action=list
 FormListOverrideReasonNoHook = the page does not call the doActions hook
+FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION = Accept searches without action
+FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION_Tooltip = Some lists (users, contacts, agenda...) post no action field with their search. When enabled, a search without action is converted to GET too, and these lists are offered below. A request carrying another action is never converted. Save to refresh the offered lists.
+FormListOverrideAcceptEmptyActionCount = %s detected lists are concerned.
+FormListOverrideNoActionPosted = no action
+FormListOverrideReasonEmptyAction = its form posts no action: enable "Accept searches without action"
 FORMLISTOVERRIDE_DRYRUN = Dry-run (log only)
 FORMLISTOVERRIDE_DRYRUN_Tooltip = When enabled, the target GET URL is written to the Dolibarr log (LOG_DEBUG) instead of performing the redirect. Use it to validate the behavior on your install before enabling it for real.
 

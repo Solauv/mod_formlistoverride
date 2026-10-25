@@ -80,6 +80,7 @@ $backtopage = GETPOST('backtopage', 'alpha');
 $form = new Form($db);
 
 $pagesConstName = 'FORMLISTOVERRIDE_FORCE_FORM_METHOD_GET_WHEN_SEARCH_ON_THIS_PAGES';
+$acceptEmptyAction = (bool) getDolGlobalInt('FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION');
 
 
 /*
@@ -88,8 +89,8 @@ $pagesConstName = 'FORMLISTOVERRIDE_FORCE_FORM_METHOD_GET_WHEN_SEARCH_ON_THIS_PA
 
 if ($action == 'detect') {
 	$detection = formlistoverrideDetectAndStoreListPages($db);
-	$nbCompatible = count(array_filter($detection['pages'], static function ($page) {
-		return $page['compatible'];
+	$nbCompatible = count(array_filter($detection['pages'], static function ($page) use ($acceptEmptyAction) {
+		return formlistoverrideIsListPageUsable($page, $acceptEmptyAction);
 	}));
 	setEventMessages($langs->trans('FormListOverrideDetectionDone', $nbCompatible), null, 'mesgs');
 	header('Location: '.$_SERVER['PHP_SELF']);
@@ -122,6 +123,7 @@ if ($action == 'update') {
 
 	dolibarr_set_const($db, $pagesConstName, implode("\n", $validEntries), 'chaine', 0, '', $conf->entity);
 	dolibarr_set_const($db, 'FORMLISTOVERRIDE_DRYRUN', (int) GETPOST('FORMLISTOVERRIDE_DRYRUN', 'int'), 'chaine', 0, '', $conf->entity);
+	dolibarr_set_const($db, 'FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION', (int) GETPOST('FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION', 'int'), 'chaine', 0, '', $conf->entity);
 
 	setEventMessages($langs->trans('SetupSaved'), null, 'mesgs');
 	header('Location: '.$_SERVER['PHP_SELF']);
@@ -140,11 +142,16 @@ if ($detection === null) {
 	$detection = formlistoverrideDetectAndStoreListPages($db);
 }
 
-// Compatible pages grouped for display: core first, then one group per external module.
+// Usable pages grouped for display: core first, then one group per external module.
+// Lists posting no action are offered only with the empty action option.
 $groups = array();
 $incompatible = array();
+$emptyActionPages = array();
 foreach ($detection['pages'] as $page) {
-	if (!$page['compatible']) {
+	if ($page['reason'] === 'emptyaction') {
+		$emptyActionPages[] = $page['path'];
+	}
+	if (!formlistoverrideIsListPageUsable($page, $acceptEmptyAction)) {
 		$incompatible[] = $page;
 		continue;
 	}
@@ -204,6 +211,12 @@ print '<input type="hidden" name="action" value="update">';
 print '<div class="warning">'.$langs->trans('FormListOverrideWarningActionList').'</div>';
 
 print '<table class="noborder centpercent">';
+
+// First: it decides which lists are offered below.
+print '<tr class="liste_titre"><td>'.$form->textwithpicto($langs->trans('FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION'), $langs->trans('FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION_Tooltip')).'</td></tr>';
+print '<tr class="oddeven"><td>'.$form->selectyesno('FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION', (int) $acceptEmptyAction, 1);
+print ' <span class="opacitymedium">'.$langs->trans('FormListOverrideAcceptEmptyActionCount', count($emptyActionPages)).'</span></td></tr>';
+
 foreach ($groups as $groupKey => $group) {
 	$groupId = 'flo'.dol_hash($groupKey, '3');
 	print '<tr class="liste_titre"><td>'.dol_escape_htmltag($group['label']).' ('.count($group['pages']).')';
@@ -214,7 +227,11 @@ foreach ($groups as $groupKey => $group) {
 	foreach ($group['pages'] as $path) {
 		$inputId = $groupId.'_'.dol_hash($path, '3');
 		print '<div class="nowraponall"><input type="checkbox" class="formlistoverride-page" data-group="'.$groupId.'" name="pages[]" id="'.$inputId.'" value="'.dol_escape_htmltag($path).'"'.(in_array($path, $checkedPages, true) ? ' checked' : '').'>';
-		print ' <label for="'.$inputId.'">'.dol_escape_htmltag($path).'</label></div>';
+		print ' <label for="'.$inputId.'">'.dol_escape_htmltag($path);
+		if (in_array($path, $emptyActionPages, true)) {
+			print ' <span class="opacitymedium">('.$langs->trans('FormListOverrideNoActionPosted').')</span>';
+		}
+		print '</label></div>';
 	}
 	print '</div></td></tr>';
 }
@@ -236,7 +253,8 @@ if (!empty($incompatible)) {
 	print '<br><details><summary>'.$langs->trans('FormListOverrideIncompatibleTitle', count($incompatible)).'</summary>';
 	print '<span class="opacitymedium">'.$langs->trans('FormListOverrideIncompatibleHelp').'</span><ul>';
 	foreach ($incompatible as $page) {
-		$reasonKey = ($page['reason'] === 'nohook' ? 'FormListOverrideReasonNoHook' : 'FormListOverrideReasonNoAction');
+		$reasonKeys = array('nohook' => 'FormListOverrideReasonNoHook', 'emptyaction' => 'FormListOverrideReasonEmptyAction');
+		$reasonKey = $reasonKeys[$page['reason']] ?? 'FormListOverrideReasonNoAction';
 		print '<li>'.dol_escape_htmltag($page['path']).' &mdash; <span class="opacitymedium">'.$langs->trans($reasonKey).'</span></li>';
 	}
 	print '</ul></details>';

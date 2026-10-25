@@ -24,7 +24,7 @@
 /**
  * Prepare admin pages header
  *
- * @return array
+ * @return array<int,array<int,string>>
  */
 function formlistoverrideAdminPrepareHead()
 {
@@ -95,6 +95,14 @@ function formlistoverrideGetListOfPagesToOverrideForm(): array
 }
 
 /**
+ * Version of the stored detection format. A detection stored with an older version is
+ * ignored and run again: its reasons may not mean the same thing.
+ */
+if (!defined('FORMLISTOVERRIDE_DETECTION_VERSION')) {
+	define('FORMLISTOVERRIDE_DETECTION_VERSION', 2);
+}
+
+/**
  * Tell whether a configured entry is acceptable: a relative page path or suffix,
  * without '..' nor characters a script path does not need.
  *
@@ -110,9 +118,13 @@ function formlistoverrideIsValidPageEntry(string $page): bool
  * Scan directories for list pages and tell which ones the module can act on.
  *
  * A candidate is a '*list*.php' file (templates excluded) whose search form posts
- * 'formfilteraction'. It is compatible when its form also posts action=list (literally
- * or through an expression giving 'list') and when the page calls the doActions hook:
- * without either, the conversion can never trigger there.
+ * 'formfilteraction'. Its reason is:
+ * - ''            : compatible, the form posts action=list (literally or through an
+ *                   expression giving 'list') and the page calls the doActions hook;
+ * - 'emptyaction' : the form posts no 'action' field at all (user/list.php...): usable
+ *                   only with FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION;
+ * - 'noaction'    : the form posts another action (accountancy 'ventil'...);
+ * - 'nohook'      : the page never calls doActions, the module cannot run there.
  *
  * Directories that are themselves one of the scanned roots are skipped when met inside
  * another root (htdocs/custom inside htdocs), so each page is listed once, under its root.
@@ -169,13 +181,14 @@ function formlistoverrideScanListPages(array $roots): array
 					}
 				}
 			}
+			$hasActionField = (bool) preg_match('/name=["\']action["\']/', $content);
 			$callsDoActions = (bool) preg_match('/executeHooks\(\s*["\']doActions["\']/', $content);
 
 			$reason = '';
-			if (!$postsActionList) {
-				$reason = 'noaction';
-			} elseif (!$callsDoActions) {
+			if (!$callsDoActions) {
 				$reason = 'nohook';
+			} elseif (!$postsActionList) {
+				$reason = ($hasActionField ? 'noaction' : 'emptyaction');
 			}
 			$path = str_replace('\\', '/', substr($file->getPathname(), strlen($rootDir) + 1));
 			$found[$path] = array('path' => $path, 'root' => (string) $rootKey, 'compatible' => ($reason === ''), 'reason' => $reason);
@@ -191,13 +204,14 @@ function formlistoverrideScanListPages(array $roots): array
  * Detect list pages on this install (core and every alternative root) and store the result.
  *
  * @param  DoliDB $db Database handler
- * @return array{date:int,pages:array<int,array{path:string,root:string,compatible:bool,reason:string}>}
+ * @return array{version:int,date:int,pages:array<int,array{path:string,root:string,compatible:bool,reason:string}>}
  */
 function formlistoverrideDetectAndStoreListPages($db): array
 {
 	global $conf;
 
 	$detection = array(
+		'version' => FORMLISTOVERRIDE_DETECTION_VERSION,
 		'date' => dol_now(),
 		'pages' => formlistoverrideScanListPages($conf->file->dol_document_root),
 	);
@@ -209,16 +223,67 @@ function formlistoverrideDetectAndStoreListPages($db): array
 /**
  * Get the last stored detection.
  *
- * @return array{date:int,pages:array<int,array{path:string,root:string,compatible:bool,reason:string}>}|null Null if never run
+ * @return array{version:int,date:int,pages:array<int,array{path:string,root:string,compatible:bool,reason:string}>}|null Null if never run, or run by an older version
  */
 function formlistoverrideGetStoredListPages(): ?array
 {
 	$detection = json_decode(getDolGlobalString('FORMLISTOVERRIDE_DETECTED_PAGES'), true);
-	if (!is_array($detection) || !isset($detection['pages']) || !is_array($detection['pages'])) {
+	if (!is_array($detection) || !isset($detection['pages']) || !is_array($detection['pages'])
+		|| (int) ($detection['version'] ?? 1) < FORMLISTOVERRIDE_DETECTION_VERSION) {
 		return null;
 	}
 
 	return $detection;
+}
+
+/**
+ * Tell whether a detected list page can be offered, given the empty action option.
+ *
+ * @param  array{path:string,root:string,compatible:bool,reason:string} $page              Detected page
+ * @param  bool                                                          $acceptEmptyAction Value of FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION
+ * @return bool
+ */
+function formlistoverrideIsListPageUsable(array $page, bool $acceptEmptyAction): bool
+{
+	return $page['reason'] === '' || ($acceptEmptyAction && $page['reason'] === 'emptyaction');
+}
+
+/**
+ * Tell whether a request is a genuine search submit of a list.
+ *
+ * The action is accepted when the page has it as 'list'. With $acceptEmptyAction, a request
+ * posting no action at all is accepted too: some lists (user/list.php, contact/list.php...)
+ * post none. The REQUEST action is checked then, not the page variable, which some lists
+ * default to 'view'. A request posting another action is never a search.
+ *
+ * @param  string[] $contexts        Hook contexts of the page ($hookmanager->contextarray)
+ * @param  string $pageAction        Action as the page holds it
+ * @param  string $requestAction     Action as posted (GETPOST('action', 'aZ09'))
+ * @param  string $formFilterAction  Posted 'formfilteraction'
+ * @param  string $method            Request method
+ * @param  string $massAction        Posted 'massaction' ('' or '0' when none)
+ * @param  bool   $acceptEmptyAction Value of FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION
+ * @return bool
+ */
+function formlistoverrideIsSearchSubmit(array $contexts, string $pageAction, string $requestAction, string $formFilterAction, string $method, string $massAction, bool $acceptEmptyAction): bool
+{
+	$actionOk = ($pageAction === 'list') || ($acceptEmptyAction && $requestAction === '');
+
+	// Any context, not only the first: an object built by the page (new User() in
+	// user/list.php) pushes its own context ('userdao') in front of the page one.
+	$isListContext = false;
+	foreach ($contexts as $context) {
+		if (preg_match('/list$/', (string) $context)) {
+			$isListContext = true;
+			break;
+		}
+	}
+
+	return $isListContext
+		&& $actionOk
+		&& $formFilterAction === 'list'
+		&& $method === 'POST'
+		&& empty($massAction); // '0' is the "no mass action" value of the select
 }
 
 /**
@@ -240,8 +305,8 @@ function formlistoverrideSplitConfiguredPages(array $configured, array $candidat
  * Convert a POST search-list request into a GET one when it is safe to do so.
  *
  * The conversion is attempted only for a genuine search submit:
- * - the page context ends with 'list'
- * - request parameter 'action' is 'list'
+ * - one of the page contexts ends with 'list'
+ * - action is 'list' (or empty, with FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION)
  * - request parameter 'formfilteraction' is 'list'
  * - request method is POST
  * - it is not a mass action
@@ -251,11 +316,11 @@ function formlistoverrideSplitConfiguredPages(array $configured, array $candidat
  * Dolibarr fall back to its standard POST behavior. Not redirecting is always
  * safe (it is the current default everyone already lives with).
  *
- * @param  string $context  The current page context (typically $hookmanager->contextarray[0])
- * @param  string $action   The current action
+ * @param  string[] $contexts The page hook contexts ($hookmanager->contextarray)
+ * @param  string   $action   The current action
  * @return void
  */
-function formlistoverrideConvertPostSearchListRequestToGetIfPossible($context, $action)
+function formlistoverrideConvertPostSearchListRequestToGetIfPossible(array $contexts, $action)
 {
 	// --- Fail-safe guards: never convert in these cases ---
 
@@ -276,12 +341,16 @@ function formlistoverrideConvertPostSearchListRequestToGetIfPossible($context, $
 
 	// --- Qualify a genuine search submit ---
 
-	if (preg_match('/list$/', $context)
-		&& $action == 'list'
-		&& GETPOST('formfilteraction') == 'list'
-		&& $_SERVER['REQUEST_METHOD'] == 'POST'
-		&& !GETPOST('massaction') // exclude mass actions: their values are strings, so use GETPOST (NOT GETPOSTINT)
-	) {
+	// massaction values are strings: read with GETPOST, NOT GETPOSTINT (which casts them to 0).
+	if (formlistoverrideIsSearchSubmit(
+		$contexts,
+		(string) $action,
+		(string) GETPOST('action', 'aZ09'),
+		(string) GETPOST('formfilteraction'),
+		(string) $_SERVER['REQUEST_METHOD'],
+		(string) GETPOST('massaction'),
+		(bool) getDolGlobalInt('FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION')
+	)) {
 		$pagesToOverride = formlistoverrideGetListOfPagesToOverrideForm();
 
 		foreach ($pagesToOverride as $page) {
