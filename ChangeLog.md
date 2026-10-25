@@ -3,6 +3,9 @@
 CHANGELOG FORMLISTOVERRIDE FOR DOLIBARR ERP CRM
 
 ## Unreleased
+Add: setup page lists the compatible list pages as checkboxes, grouped by core and external module, with check/uncheck all. A free text field keeps extra pages and suffixes (e.g. _list.php). The configuration constant is unchanged: existing setups are kept.
+Add: "Detect lists" button scanning the core and every custom root. A list is compatible when its search form posts action=list and the page calls the doActions hook; detected but incompatible lists are shown with the reason. Detection runs once at the first visit.
+Change: invalid entries (characters outside a script path, '..') are rejected on save. The page no longer uses FormSetup.
 Fix: the module did nothing with the default CSRF level (2 up to Dolibarr 23, 3 since 24): conversion was skipped from level 2. The guard is removed; at level >= 3 'action' is left out of the GET URL, the only parameter the core requires a token for.
 
 ## 1.0.1

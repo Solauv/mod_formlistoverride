@@ -95,6 +95,148 @@ function formlistoverrideGetListOfPagesToOverrideForm(): array
 }
 
 /**
+ * Tell whether a configured entry is acceptable: a relative page path or suffix,
+ * without '..' nor characters a script path does not need.
+ *
+ * @param  string $page Entry (e.g. 'comm/propal/list.php' or '_list.php')
+ * @return bool
+ */
+function formlistoverrideIsValidPageEntry(string $page): bool
+{
+	return (bool) preg_match('/^[A-Za-z0-9_\-\.\/]+$/', $page) && strpos($page, '..') === false;
+}
+
+/**
+ * Scan directories for list pages and tell which ones the module can act on.
+ *
+ * A candidate is a '*list*.php' file (templates excluded) whose search form posts
+ * 'formfilteraction'. It is compatible when its form also posts action=list (literally
+ * or through an expression giving 'list') and when the page calls the doActions hook:
+ * without either, the conversion can never trigger there.
+ *
+ * Directories that are themselves one of the scanned roots are skipped when met inside
+ * another root (htdocs/custom inside htdocs), so each page is listed once, under its root.
+ *
+ * @param  array<string,string> $roots Root key => absolute directory, e.g. $conf->file->dol_document_root
+ * @return array<int,array{path:string,root:string,compatible:bool,reason:string}> Sorted by root order then path
+ */
+function formlistoverrideScanListPages(array $roots): array
+{
+	$skippedNames = array('custom', 'includes', 'vendor', 'node_modules', '.git', 'install', 'test', 'tests');
+	$realRoots = array();
+	foreach ($roots as $key => $dir) {
+		$real = realpath($dir);
+		if ($real !== false && is_dir($real)) {
+			$realRoots[$key] = $real;
+		}
+	}
+
+	$pages = array();
+	foreach ($realRoots as $rootKey => $rootDir) {
+		$otherRoots = array_diff($realRoots, array($rootDir));
+		$filter = static function ($file, $key, $iterator) use ($skippedNames, $otherRoots, $rootDir) {
+			if ($iterator->hasChildren()) {
+				$path = $file->getPathname();
+				return !in_array($file->getFilename(), $skippedNames, true)
+					&& !in_array($path, $otherRoots, true)
+					&& $path !== $rootDir.'/modulebuilder/template';
+			}
+			return true;
+		};
+		$iterator = new RecursiveIteratorIterator(new RecursiveCallbackFilterIterator(
+			new RecursiveDirectoryIterator($rootDir, FilesystemIterator::SKIP_DOTS),
+			$filter
+		));
+
+		$found = array();
+		foreach ($iterator as $file) {
+			$name = $file->getFilename();
+			if (!preg_match('/list[^\/]*\.php$/', $name) || preg_match('/\.tpl\.php$/', $name)) {
+				continue;
+			}
+			$content = (string) @file_get_contents($file->getPathname());
+			if (!preg_match('/name=["\']formfilteraction["\']/', $content)) {
+				continue;
+			}
+
+			// action=list, or an expression yielding it: value="'.($action == 'edit' ? 'update' : 'list').'"
+			$postsActionList = false;
+			if (preg_match_all('/name=["\']action["\']\s+value="([^"]*)"/', $content, $matches)) {
+				foreach ($matches[1] as $value) {
+					if (preg_match('/\blist\b/', $value)) {
+						$postsActionList = true;
+						break;
+					}
+				}
+			}
+			$callsDoActions = (bool) preg_match('/executeHooks\(\s*["\']doActions["\']/', $content);
+
+			$reason = '';
+			if (!$postsActionList) {
+				$reason = 'noaction';
+			} elseif (!$callsDoActions) {
+				$reason = 'nohook';
+			}
+			$path = str_replace('\\', '/', substr($file->getPathname(), strlen($rootDir) + 1));
+			$found[$path] = array('path' => $path, 'root' => (string) $rootKey, 'compatible' => ($reason === ''), 'reason' => $reason);
+		}
+		ksort($found);
+		$pages = array_merge($pages, array_values($found));
+	}
+
+	return $pages;
+}
+
+/**
+ * Detect list pages on this install (core and every alternative root) and store the result.
+ *
+ * @param  DoliDB $db Database handler
+ * @return array{date:int,pages:array<int,array{path:string,root:string,compatible:bool,reason:string}>}
+ */
+function formlistoverrideDetectAndStoreListPages($db): array
+{
+	global $conf;
+
+	$detection = array(
+		'date' => dol_now(),
+		'pages' => formlistoverrideScanListPages($conf->file->dol_document_root),
+	);
+	dolibarr_set_const($db, 'FORMLISTOVERRIDE_DETECTED_PAGES', json_encode($detection), 'chaine', 0, '', $conf->entity);
+
+	return $detection;
+}
+
+/**
+ * Get the last stored detection.
+ *
+ * @return array{date:int,pages:array<int,array{path:string,root:string,compatible:bool,reason:string}>}|null Null if never run
+ */
+function formlistoverrideGetStoredListPages(): ?array
+{
+	$detection = json_decode(getDolGlobalString('FORMLISTOVERRIDE_DETECTED_PAGES'), true);
+	if (!is_array($detection) || !isset($detection['pages']) || !is_array($detection['pages'])) {
+		return null;
+	}
+
+	return $detection;
+}
+
+/**
+ * Split configured entries between those shown as checkboxes and those kept in the free text field.
+ *
+ * @param  string[] $configured Configured entries, in their stored order
+ * @param  string[] $candidates Paths offered as checkboxes
+ * @return array{0:string[],1:string[]} [checked candidates, other entries]
+ */
+function formlistoverrideSplitConfiguredPages(array $configured, array $candidates): array
+{
+	$checked = array_values(array_intersect($configured, $candidates));
+	$others = array_values(array_diff($configured, $candidates));
+
+	return array($checked, $others);
+}
+
+/**
  * Convert a POST search-list request into a GET one when it is safe to do so.
  *
  * The conversion is attempted only for a genuine search submit:
