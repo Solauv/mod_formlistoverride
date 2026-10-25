@@ -128,10 +128,9 @@ function formlistoverrideConvertPostSearchListRequestToGetIfPossible($context, $
 		return;
 	}
 
-	// Strict CSRF policy (token also enforced on GET): a token-less GET would be rejected.
-	if (getDolGlobalInt('MAIN_SECURITY_CSRF_WITH_TOKEN') >= 2) {
-		return;
-	}
+	// No CSRF guard here: whatever the MAIN_SECURITY_CSRF_WITH_TOKEN level, the GET
+	// URL is built so that the core accepts it without token (see
+	// formlistoverrideBuildGetUrlFromPost()).
 
 	// --- Qualify a genuine search submit ---
 
@@ -155,6 +154,46 @@ function formlistoverrideConvertPostSearchListRequestToGetIfPossible($context, $
 }
 
 /**
+ * Build the GET URL equivalent to a POST search, acceptable by the core without token.
+ *
+ * MAIN_SECURITY_CSRF_WITH_TOKEN >= 3 (the default since Dolibarr 24, 2 before) requires a token on
+ * every GET carrying an 'action' or a 'massaction', and 'list' is not in the core list of
+ * legitimate GET actions. At that level 'action' is therefore left out: list pages treat a
+ * missing action as a display. Below 3, 'action=list' is kept so the page behaves exactly as
+ * on the POST (e.g. societe/list.php does not jump to the card when it finds one result).
+ *
+ * @param  array<string,mixed> $postData   Submitted search data (typically $_POST)
+ * @param  string              $scriptName Path of the list page (typically $_SERVER['SCRIPT_NAME'])
+ * @param  int                 $csrfLevel  Value of MAIN_SECURITY_CSRF_WITH_TOKEN
+ * @return string                          URL to redirect to
+ */
+function formlistoverrideBuildGetUrlFromPost(array $postData, string $scriptName, int $csrfLevel): string
+{
+	// Remove technical data that must not appear in the GET URL.
+	unset($postData['massaction']);
+	unset($postData['confirmmassactioninvisible']);
+	unset($postData['token']);
+	if ($csrfLevel >= 3) {
+		unset($postData['action']);
+	}
+
+	// Remove only truly empty string values (an empty filter means "no filter").
+	// We deliberately DO NOT strip '-1': it can be a value typed by the user in a
+	// search field, and list pages already treat the "-1 = all" sentinel on their own.
+	$postData = array_filter($postData, static function ($value) {
+		return !(is_string($value) && $value === '');
+	});
+
+	$url = $scriptName;
+	$queryString = http_build_query($postData);
+	if ($queryString !== '') {
+		$url .= '?' . $queryString;
+	}
+
+	return $url;
+}
+
+/**
  * Build the equivalent GET URL from the current POST search and redirect to it.
  *
  * Redirection happens only if the resulting URL stays within a safe length;
@@ -164,25 +203,7 @@ function formlistoverrideConvertPostSearchListRequestToGetIfPossible($context, $
  */
 function formlistoverrideRedirectPostSearchListToGet()
 {
-	$postData = $_POST;
-
-	// Remove technical data that must not appear in the GET URL.
-	unset($postData['massaction']);
-	unset($postData['confirmmassactioninvisible']);
-	unset($postData['token']);
-
-	// Remove only truly empty string values (an empty filter means "no filter").
-	// We deliberately DO NOT strip '-1': it can be a value typed by the user in a
-	// search field, and list pages already treat the "-1 = all" sentinel on their own.
-	$postData = array_filter($postData, static function ($value) {
-		return !(is_string($value) && $value === '');
-	});
-
-	$newLocationUrl = $_SERVER['SCRIPT_NAME'];
-	$queryString = http_build_query($postData);
-	if ($queryString !== '') {
-		$newLocationUrl .= '?' . $queryString;
-	}
+	$newLocationUrl = formlistoverrideBuildGetUrlFromPost($_POST, $_SERVER['SCRIPT_NAME'], getDolGlobalInt('MAIN_SECURITY_CSRF_WITH_TOKEN'));
 
 	// Only redirect (GET) if the URL stays within a safe length; otherwise fall back
 	// to the standard POST behavior (fail-safe).

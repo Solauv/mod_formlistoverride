@@ -2,6 +2,9 @@
 
 CHANGELOG FORMLISTOVERRIDE FOR DOLIBARR ERP CRM
 
+## Unreleased
+Fix: the module did nothing with the default CSRF level (2 up to Dolibarr 23, 3 since 24): conversion was skipped from level 2. The guard is removed; at level >= 3 'action' is left out of the GET URL, the only parameter the core requires a token for.
+
 ## 1.0.1
 Fix: mass actions were swallowed on overridden pages (massaction guard used GETPOSTINT, which casts string actions to 0). Now uses GETPOST.
 Fix: empty entries in the page list are filtered out; page matching is end-anchored (no more substring over-match).
