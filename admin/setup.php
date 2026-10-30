@@ -223,7 +223,7 @@ foreach ($groups as $groupKey => $group) {
 	print ' &nbsp; <a href="#" class="formlistoverride-checkall" data-group="'.$groupId.'" data-check="1">'.$langs->trans('FormListOverrideCheckAll').'</a>';
 	print ' / <a href="#" class="formlistoverride-checkall" data-group="'.$groupId.'" data-check="0">'.$langs->trans('FormListOverrideUncheckAll').'</a>';
 	print '</td></tr>';
-	print '<tr class="oddeven"><td><div style="columns: 20em auto;">';
+	print '<tr class="oddeven"><td><div style="columns: 30em auto;">';
 	foreach ($group['pages'] as $path) {
 		$inputId = $groupId.'_'.dol_hash($path, '3');
 		print '<div class="nowraponall"><input type="checkbox" class="formlistoverride-page" data-group="'.$groupId.'" name="pages[]" id="'.$inputId.'" value="'.dol_escape_htmltag($path).'"'.(in_array($path, $checkedPages, true) ? ' checked' : '').'>';
