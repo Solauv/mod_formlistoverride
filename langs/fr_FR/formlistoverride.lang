@@ -1,4 +1,4 @@
-# Copyright (C) 2025 SuperAdmin
+# Copyright (C) 2025-2026 Solauv <contact@solauv.fr>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,14 +26,30 @@ ModuleFormListOverrideDesc = FormListOverride description
 # Admin page
 #
 FormListOverrideSetup = Configuration du module
-Settings = Settings
 FormListOverrideSetupPage = Paramètres
-FORMLISTOVERRIDE_FORCE_FORM_METHOD_GET_WHEN_SEARCH_ON_THIS_PAGES = Liste des pages concernées pour forcer les recherches en GET et éviter le message de confirmation du navigateur concernant le renvoie des données du formulaire de recherche
-FORMLISTOVERRIDE_FORCE_FORM_METHOD_GET_WHEN_SEARCH_ON_THIS_PAGES_Tooltip = Une page par ligne (ex : ticket/list.php)
+FormListOverrideDetectButton = Détecter les listes
+FormListOverrideDetectHelp = Parcourt le cœur de Dolibarr et les modules externes (répertoires custom) à la recherche des listes compatibles. À relancer après l'installation ou la mise à jour d'un module.
+FormListOverrideLastDetection = Dernière détection : %s — %s listes compatibles, dont %s dans des modules externes.
+FormListOverrideDetectionDone = Détection terminée : %s listes compatibles.
+FormListOverrideWarningActionList = Ne cochez que des listes qui réservent action=list à l'affichage : une page qui enregistre des données sous action=list (certains modules externes le font) serait rejouée en GET. Testez avant d'activer en production, au besoin avec le mode test ci-dessous.
+FormListOverrideCoreLists = Listes du cœur Dolibarr
+FormListOverrideExternalModule = Module externe : %s
+FormListOverrideCheckAll = Tout cocher
+FormListOverrideUncheckAll = Tout décocher
+FormListOverrideExtraPages = Autres pages
+FormListOverrideExtraPagesHelp = Une page ou un suffixe par ligne, pour ce que la détection ne trouve pas. Ex. : monmodule/maliste.php, ou _list.php pour toutes les listes générées par le Module Builder.
+FormListOverrideInvalidPage = Entrée ignorée (caractères non autorisés) : %s
+FormListOverrideIncompatibleTitle = Listes détectées mais non compatibles (%s)
+FormListOverrideIncompatibleHelp = Le module ne peut pas agir sur ces listes.
+FormListOverrideReasonNoAction = son formulaire de recherche n'envoie pas action=list
+FormListOverrideReasonNoHook = la page n'appelle pas le hook doActions
+FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION = Accepter les recherches sans action
+FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION_Tooltip = Certaines listes (utilisateurs, contacts, agenda…) n'envoient pas de champ action avec leur recherche. Si activé, une recherche sans action est aussi convertie en GET, et ces listes sont proposées ci-dessous. Une requête portant une autre action n'est jamais convertie. Enregistrez pour mettre à jour les listes proposées.
+FormListOverrideAcceptEmptyActionCount = %s listes détectées sont concernées.
+FormListOverrideNoActionPosted = sans action
+FormListOverrideReasonEmptyAction = son formulaire n'envoie pas d'action : activez « Accepter les recherches sans action »
 FORMLISTOVERRIDE_DRYRUN = Mode test (journalisation seule)
 FORMLISTOVERRIDE_DRYRUN_Tooltip = Si activé, l'URL GET cible est écrite dans le journal Dolibarr (LOG_DEBUG) au lieu d'effectuer la redirection. Permet de valider le comportement sur votre installation avant l'activation réelle.
-FormListOverrideSuggestedPagesTitle = Pages suggérées
-FormListOverrideSuggestedPagesHelp = Proposition uniquement, non appliquée automatiquement. Copiez les lignes voulues dans le champ ci-dessus puis enregistrez. Le suffixe « _list.php » couvre aussi les listes des modules custom (modulebuilder). N'ajoutez que des pages réservant action='list' à l'affichage.
 
 
 #

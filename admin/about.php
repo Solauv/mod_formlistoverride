@@ -50,6 +50,12 @@ if (!$res) {
 	die("Include of main fails");
 }
 
+/**
+ * @var DoliDB $db
+ * @var Translate $langs
+ * @var User $user
+ */
+
 // Libraries
 require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
