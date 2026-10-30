@@ -48,6 +48,8 @@ FORMLISTOVERRIDE_ACCEPT_EMPTY_ACTION_Tooltip = Some lists (users, contacts, agen
 FormListOverrideAcceptEmptyActionCount = %s detected lists are concerned.
 FormListOverrideNoActionPosted = no action
 FormListOverrideReasonEmptyAction = its form posts no action: enable "Accept searches without action"
+FORMLISTOVERRIDE_MENU_PER_TAB = One menu per browser tab
+FORMLISTOVERRIDE_MENU_PER_TAB_Tooltip = Dolibarr keeps the menu section in the session, shared by all tabs: a menu click in one tab changes the menu of the others when they are reloaded. When enabled, each tab keeps its section until a menu is clicked in that tab.
 FORMLISTOVERRIDE_DRYRUN = Dry-run (log only)
 FORMLISTOVERRIDE_DRYRUN_Tooltip = When enabled, the target GET URL is written to the Dolibarr log (LOG_DEBUG) instead of performing the redirect. Use it to validate the behavior on your install before enabling it for real.
 
