@@ -238,7 +238,7 @@ foreach ($groups as $groupKey => $group) {
 
 print '<tr class="liste_titre"><td>'.$form->textwithpicto($langs->trans('FormListOverrideExtraPages'), $langs->trans('FormListOverrideExtraPagesHelp')).'</td></tr>';
 print '<tr class="oddeven"><td>';
-print '<textarea name="extrapages" class="quatrevingtpercent" rows="'.max(3, count($otherEntries) + 1).'">'.dol_escape_htmltag(implode("\n", $otherEntries)).'</textarea>';
+print '<textarea name="extrapages" class="quatrevingtpercent" rows="'.max(3, count($otherEntries) + 1).'">'.dol_escape_htmltag(implode("\n", $otherEntries), 0, 1).'</textarea>';
 print '</td></tr>';
 
 print '<tr class="liste_titre"><td>'.$form->textwithpicto($langs->trans('FORMLISTOVERRIDE_DRYRUN'), $langs->trans('FORMLISTOVERRIDE_DRYRUN_Tooltip')).'</td></tr>';
